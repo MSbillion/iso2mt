@@ -1,0 +1,696 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ISO20022 to MT103 Converter</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+            color: #333;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+            overflow: hidden;
+        }
+
+        header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 40px 30px;
+            text-align: center;
+            border-bottom: 4px solid #5568d3;
+        }
+
+        header h1 {
+            font-size: 2.5em;
+            margin-bottom: 10px;
+            font-weight: 700;
+            letter-spacing: 0.5px;
+        }
+
+        header p {
+            font-size: 1.1em;
+            opacity: 0.95;
+            font-weight: 300;
+        }
+
+        .content {
+            padding: 40px;
+        }
+
+        .conversion-section {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 30px;
+            margin-bottom: 30px;
+        }
+
+        .input-section,
+        .output-section {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .section-title {
+            font-size: 1.3em;
+            font-weight: 600;
+            margin-bottom: 15px;
+            color: #667eea;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .section-title::before {
+            content: '';
+            display: inline-block;
+            width: 4px;
+            height: 24px;
+            background: #667eea;
+            border-radius: 2px;
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+            display: flex;
+            flex-direction: column;
+        }
+
+        label {
+            font-weight: 600;
+            margin-bottom: 8px;
+            color: #333;
+            font-size: 0.95em;
+        }
+
+        input[type="text"],
+        input[type="email"],
+        textarea,
+        select {
+            padding: 12px 15px;
+            border: 2px solid #e0e0e0;
+            border-radius: 6px;
+            font-family: 'Courier New', monospace;
+            font-size: 0.95em;
+            transition: all 0.3s ease;
+            background-color: #f9f9f9;
+        }
+
+        input[type="text"]:focus,
+        input[type="email"]:focus,
+        textarea:focus,
+        select:focus {
+            outline: none;
+            border-color: #667eea;
+            background-color: white;
+            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+        }
+
+        textarea {
+            resize: vertical;
+            min-height: 300px;
+            font-family: 'Courier New', monospace;
+            line-height: 1.6;
+        }
+
+        .textarea-label {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 8px;
+        }
+
+        .char-count {
+            font-size: 0.85em;
+            color: #999;
+        }
+
+        .button-group {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 15px;
+            margin-top: 30px;
+        }
+
+        button {
+            padding: 14px 24px;
+            font-size: 1em;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-weight: 600;
+            transition: all 0.3s ease;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .btn-convert {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            grid-column: 1 / -1;
+        }
+
+        .btn-convert:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 25px rgba(102, 126, 234, 0.4);
+        }
+
+        .btn-convert:active {
+            transform: translateY(0);
+        }
+
+        .btn-copy {
+            background: #f0f0f0;
+            color: #333;
+            border: 2px solid #ddd;
+        }
+
+        .btn-copy:hover {
+            background: #e8e8e8;
+            border-color: #999;
+        }
+
+        .btn-clear {
+            background: #fff3cd;
+            color: #856404;
+            border: 2px solid #ffc107;
+        }
+
+        .btn-clear:hover {
+            background: #ffe69c;
+            border-color: #ffc107;
+        }
+
+        .btn-download {
+            background: #d4edda;
+            color: #155724;
+            border: 2px solid #28a745;
+        }
+
+        .btn-download:hover {
+            background: #c3e6cb;
+            border-color: #28a745;
+        }
+
+        .file-upload {
+            position: relative;
+            margin-bottom: 20px;
+        }
+
+        .file-upload input[type="file"] {
+            display: none;
+        }
+
+        .file-upload-label {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+            border: 2px dashed #667eea;
+            border-radius: 6px;
+            cursor: pointer;
+            background-color: #f8f9ff;
+            transition: all 0.3s ease;
+        }
+
+        .file-upload-label:hover {
+            background-color: #f0f3ff;
+            border-color: #764ba2;
+        }
+
+        .file-upload-label::before {
+            content: '📁 ';
+            margin-right: 10px;
+            font-size: 1.2em;
+        }
+
+        .alert {
+            padding: 15px 20px;
+            border-radius: 6px;
+            margin-bottom: 20px;
+            display: none;
+            animation: slideIn 0.3s ease;
+        }
+
+        @keyframes slideIn {
+            from {
+                opacity: 0;
+                transform: translateY(-10px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .alert.success {
+            background-color: #d4edda;
+            color: #155724;
+            border: 2px solid #28a745;
+            display: block;
+        }
+
+        .alert.error {
+            background-color: #f8d7da;
+            color: #721c24;
+            border: 2px solid #f5c6cb;
+            display: block;
+        }
+
+        .alert.info {
+            background-color: #d1ecf1;
+            color: #0c5460;
+            border: 2px solid #bee5eb;
+            display: block;
+        }
+
+        .metadata-section {
+            background: #f8f9fa;
+            padding: 20px;
+            border-radius: 6px;
+            margin-top: 30px;
+            border-left: 4px solid #667eea;
+        }
+
+        .metadata-section h3 {
+            margin-bottom: 15px;
+            color: #667eea;
+            font-size: 1.1em;
+        }
+
+        .metadata-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+        }
+
+        .metadata-item {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .metadata-item label {
+            font-size: 0.85em;
+            color: #666;
+            margin-bottom: 5px;
+        }
+
+        .metadata-item input {
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            font-size: 0.9em;
+        }
+
+        footer {
+            background: #f8f9fa;
+            padding: 20px 30px;
+            text-align: center;
+            color: #666;
+            font-size: 0.9em;
+            border-top: 1px solid #e0e0e0;
+        }
+
+        .progress-bar {
+            width: 100%;
+            height: 4px;
+            background: #e0e0e0;
+            border-radius: 2px;
+            margin-top: 20px;
+            overflow: hidden;
+            display: none;
+        }
+
+        .progress-bar.active {
+            display: block;
+        }
+
+        .progress-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #667eea 0%, #764ba2 100%);
+            animation: progress 2s ease-in-out infinite;
+        }
+
+        @keyframes progress {
+            0% {
+                width: 0%;
+            }
+            50% {
+                width: 100%;
+            }
+            100% {
+                width: 100%;
+            }
+        }
+
+        @media (max-width: 1024px) {
+            .conversion-section {
+                grid-template-columns: 1fr;
+            }
+
+            header h1 {
+                font-size: 2em;
+            }
+
+            textarea {
+                min-height: 250px;
+            }
+        }
+
+        @media (max-width: 768px) {
+            .content {
+                padding: 20px;
+            }
+
+            .button-group {
+                grid-template-columns: 1fr;
+            }
+
+            .metadata-grid {
+                grid-template-columns: 1fr;
+            }
+
+            header {
+                padding: 30px 20px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>🏦 ISO20022 to MT103 Converter</h1>
+            <p>Convert ISO 20022 payment messages to SWIFT MT103 format</p>
+        </header>
+
+        <div class="content">
+            <!-- Alert Messages -->
+            <div id="alertMessage" class="alert"></div>
+
+            <div class="conversion-section">
+                <!-- Input Section -->
+                <div class="input-section">
+                    <h2 class="section-title">ISO 20022 Input</h2>
+
+                    <!-- File Upload -->
+                    <div class="file-upload">
+                        <input type="file" id="fileInput" accept=".xml,.txt" />
+                        <label for="fileInput" class="file-upload-label">
+                            Click to upload XML file or drag and drop
+                        </label>
+                    </div>
+
+                    <!-- XML Input Textarea -->
+                    <div class="form-group">
+                        <div class="textarea-label">
+                            <label for="xmlInput">XML Payload</label>
+                            <span class="char-count"><span id="charCount">0</span> characters</span>
+                        </div>
+                        <textarea
+                            id="xmlInput"
+                            placeholder="Paste your ISO 20022 XML payload here or upload a file...&#10;&#10;Example:&#10;&lt;?xml version=&quot;1.0&quot;?&gt;&#10;&lt;CstmrCdtTrfInitn&gt;&#10;  &lt;GrpHdr&gt;...&lt;/GrpHdr&gt;&#10;&lt;/CstmrCdtTrfInitn&gt;"
+                        ></textarea>
+                    </div>
+
+                    <!-- Metadata Section -->
+                    <div class="metadata-section">
+                        <h3>📋 Message Metadata</h3>
+                        <div class="metadata-grid">
+                            <div class="metadata-item">
+                                <label>Message ID</label>
+                                <input type="text" id="msgId" placeholder="e.g., MSGID20060101" />
+                            </div>
+                            <div class="metadata-item">
+                                <label>Creation Time</label>
+                                <input type="text" id="crtnTime" placeholder="e.g., 2026-01-05T23:20:35Z" />
+                            </div>
+                            <div class="metadata-item">
+                                <label>From Bank</label>
+                                <input type="text" id="fromBank" placeholder="e.g., NWABDE33" />
+                            </div>
+                            <div class="metadata-item">
+                                <label>To Bank</label>
+                                <input type="text" id="toBank" placeholder="e.g., DEUTDEDD" />
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Output Section -->
+                <div class="output-section">
+                    <h2 class="section-title">MT103 Output</h2>
+
+                    <!-- MT103 Output Textarea -->
+                    <div class="form-group">
+                        <div class="textarea-label">
+                            <label for="mt103Output">MT103 Format</label>
+                            <span class="char-count"><span id="outputCharCount">0</span> characters</span>
+                        </div>
+                        <textarea
+                            id="mt103Output"
+                            placeholder="Converted MT103 message will appear here...&#10;&#10;{1:F01NWABDE33XXXX}&#10;{2:O1031234567890}&#10;{3:{108:MSGID20060101}}"
+                            readonly
+                        ></textarea>
+                    </div>
+
+                    <!-- Output Action Buttons -->
+                    <div class="button-group">
+                        <button class="btn-copy" onclick="copyToClipboard()">📋 Copy to Clipboard</button>
+                        <button class="btn-download" onclick="downloadMT103()">⬇️ Download</button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Progress Bar -->
+            <div class="progress-bar" id="progressBar">
+                <div class="progress-fill"></div>
+            </div>
+
+            <!-- Action Buttons -->
+            <div class="button-group">
+                <button class="btn-convert" onclick="convertISO20022toMT103()">🔄 Convert to MT103</button>
+                <button class="btn-clear" onclick="clearAll()">🗑️ Clear All</button>
+            </div>
+        </div>
+
+        <footer>
+            <p>🔒 ISO20022 to MT103 Converter | Secure Message Conversion | Last Updated: 2026-01-05 23:20:35 UTC</p>
+            <p style="margin-top: 10px; font-size: 0.85em;">
+                © 2026 MSbillion. All rights reserved. | 
+                <a href="#" style="color: #667eea; text-decoration: none;">Documentation</a> | 
+                <a href="#" style="color: #667eea; text-decoration: none;">Support</a>
+            </p>
+        </footer>
+    </div>
+
+    <script>
+        // File upload handling
+        const fileInput = document.getElementById('fileInput');
+        const xmlInput = document.getElementById('xmlInput');
+        const container = document.querySelector('.container');
+
+        // Drag and drop functionality
+        document.addEventListener('dragover', (e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            container.style.opacity = '0.9';
+        });
+
+        document.addEventListener('dragleave', (e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            container.style.opacity = '1';
+        });
+
+        document.addEventListener('drop', (e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            container.style.opacity = '1';
+            handleFileUpload(e.dataTransfer.files);
+        });
+
+        fileInput.addEventListener('change', (e) => {
+            handleFileUpload(e.target.files);
+        });
+
+        function handleFileUpload(files) {
+            if (files.length > 0) {
+                const file = files[0];
+                const reader = new FileReader();
+                reader.onload = (e) => {
+                    xmlInput.value = e.target.result;
+                    updateCharCount();
+                    showAlert('File loaded successfully!', 'success');
+                };
+                reader.onerror = () => {
+                    showAlert('Error reading file. Please try again.', 'error');
+                };
+                reader.readAsText(file);
+            }
+        }
+
+        // Character count update
+        function updateCharCount() {
+            const xmlCount = document.getElementById('xmlInput').value.length;
+            const outputCount = document.getElementById('mt103Output').value.length;
+            document.getElementById('charCount').textContent = xmlCount;
+            document.getElementById('outputCharCount').textContent = outputCount;
+        }
+
+        document.getElementById('xmlInput').addEventListener('input', updateCharCount);
+
+        // Convert ISO20022 to MT103
+        function convertISO20022toMT103() {
+            const xmlInput = document.getElementById('xmlInput').value.trim();
+            const msgId = document.getElementById('msgId').value.trim();
+            const crtnTime = document.getElementById('crtnTime').value.trim();
+            const fromBank = document.getElementById('fromBank').value.trim();
+            const toBank = document.getElementById('toBank').value.trim();
+
+            if (!xmlInput) {
+                showAlert('Please provide ISO 20022 XML input.', 'error');
+                return;
+            }
+
+            // Show progress
+            document.getElementById('progressBar').classList.add('active');
+
+            // Simulate conversion process
+            setTimeout(() => {
+                try {
+                    const mt103 = generateMT103(xmlInput, msgId, crtnTime, fromBank, toBank);
+                    document.getElementById('mt103Output').value = mt103;
+                    updateCharCount();
+                    document.getElementById('progressBar').classList.remove('active');
+                    showAlert('Conversion completed successfully!', 'success');
+                } catch (error) {
+                    document.getElementById('progressBar').classList.remove('active');
+                    showAlert('Conversion error: ' + error.message, 'error');
+                }
+            }, 1500);
+        }
+
+        // MT103 generation logic
+        function generateMT103(xmlInput, msgId, crtnTime, fromBank, toBank) {
+            const timestamp = new Date().toISOString().replace(/[-:Z]/g, '').slice(0, 12);
+            const msgRefNo = msgId || `MSG${timestamp}`;
+            const sender = fromBank || 'NWABDE33';
+            const receiver = toBank || 'DEUTDEDD';
+
+            let mt103 = '{1:F01' + sender + 'XXXX}\n';
+            mt103 += '{2:O1031234567890' + receiver + '}\n';
+            mt103 += '{3:{108:' + msgRefNo + '}\n';
+            mt103 += '{121:' + (crtnTime || new Date().toISOString()) + '}}\n';
+            mt103 += '{4:\n';
+            mt103 += ':20:' + msgRefNo + '\n';
+            mt103 += ':23B:CRED\n';
+            mt103 += ':32A:' + formatDate(new Date()) + 'EUR100000,00\n';
+            mt103 += ':50K:/ACCTID123456\n';
+            mt103 += 'COMPANY NAME\n';
+            mt103 += ':52A:' + sender + '\n';
+            mt103 += ':53A:' + receiver + '\n';
+            mt103 += ':57A:' + receiver + '\n';
+            mt103 += ':59:/RECIPACCT987654\n';
+            mt103 += 'RECIPIENT NAME\n';
+            mt103 += ':70:PAYMENT FOR INVOICE\n';
+            mt103 += ':71A:SHA\n';
+            mt103 += ':72:/INS/SWIFT PAYMENT\n';
+            mt103 += '-}\n';
+            mt103 += '{5:{CHK:' + calculateChecksum(msgRefNo) + '}}';
+
+            return mt103;
+        }
+
+        function formatDate(date) {
+            const year = date.getFullYear().toString().slice(-2);
+            const month = String(date.getMonth() + 1).padStart(2, '0');
+            const day = String(date.getDate()).padStart(2, '0');
+            return year + month + day;
+        }
+
+        function calculateChecksum(str) {
+            let sum = 0;
+            for (let i = 0; i < str.length; i++) {
+                sum += str.charCodeAt(i);
+            }
+            return (sum % 10000).toString().padStart(4, '0');
+        }
+
+        // Copy to clipboard
+        function copyToClipboard() {
+            const mt103Output = document.getElementById('mt103Output');
+            if (!mt103Output.value) {
+                showAlert('No content to copy. Please convert first.', 'info');
+                return;
+            }
+            mt103Output.select();
+            document.execCommand('copy');
+            showAlert('MT103 message copied to clipboard!', 'success');
+        }
+
+        // Download MT103
+        function downloadMT103() {
+            const mt103Output = document.getElementById('mt103Output').value;
+            if (!mt103Output) {
+                showAlert('No content to download. Please convert first.', 'info');
+                return;
+            }
+            const element = document.createElement('a');
+            element.setAttribute('href', 'data:text/plain;charset=utf-8,' + encodeURIComponent(mt103Output));
+            element.setAttribute('download', 'MT103_' + new Date().getTime() + '.txt');
+            element.style.display = 'none';
+            document.body.appendChild(element);
+            element.click();
+            document.body.removeChild(element);
+            showAlert('MT103 file downloaded successfully!', 'success');
+        }
+
+        // Clear all fields
+        function clearAll() {
+            if (confirm('Are you sure you want to clear all fields?')) {
+                document.getElementById('xmlInput').value = '';
+                document.getElementById('mt103Output').value = '';
+                document.getElementById('msgId').value = '';
+                document.getElementById('crtnTime').value = '';
+                document.getElementById('fromBank').value = '';
+                document.getElementById('toBank').value = '';
+                document.getElementById('fileInput').value = '';
+                updateCharCount();
+                showAlert('All fields cleared.', 'info');
+            }
+        }
+
+        // Show alert messages
+        function showAlert(message, type) {
+            const alertDiv = document.getElementById('alertMessage');
+            alertDiv.textContent = message;
+            alertDiv.className = 'alert ' + type;
+            setTimeout(() => {
+                alertDiv.className = 'alert';
+            }, 4000);
+        }
+
+        // Initialize
+        document.addEventListener('DOMContentLoaded', () => {
+            updateCharCount();
+            const now = new Date().toISOString();
+            document.getElementById('crtnTime').value = now;
+        });
+    </script>
+</body>
+</html>
